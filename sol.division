@@ -1,5 +1,203 @@
-if __name__ == '__main__':
-    a = int(input())
-    b = int(input())
-    print(a//b)
-    print(a/b)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sticky Notes App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e3e3e3;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-wrap: wrap;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .note {
+            width: 200px;
+            height: 200px;
+            background-color: #f9eb7b;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            cursor: pointer;
+            resize: both;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        .note textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 16px;
+        }
+
+        .note .delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .note .edit {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background-color: orange;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .note .drag {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: move;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container" id="container">
+        <!-- Notes will be dynamically added here -->
+    </div>
+
+    <script>
+        // Load notes from localStorage
+        let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+
+        // Render notes on page load
+        function renderNotes() {
+            const container = document.getElementById('container');
+            container.innerHTML = ''; // Clear existing notes
+            notes.forEach((note, index) => {
+                const noteElement = document.createElement('div');
+                noteElement.classList.add('note');
+                noteElement.draggable = true;
+                noteElement.setAttribute('data-id', index);
+
+                noteElement.innerHTML = `
+                    <button class="delete" onclick="deleteNote(${index})">X</button>
+                    <button class="edit" onclick="editNote(${index})">E</button>
+                    <div class="drag">☰</div>
+                    <textarea>${note.content}</textarea>
+                `;
+                container.appendChild(noteElement);
+                makeNoteDraggable(noteElement);
+            });
+        }
+
+        // Save notes to localStorage
+        function saveNotes() {
+            localStorage.setItem('stickyNotes', JSON.stringify(notes));
+        }
+
+        // Add a new note
+        function addNote() {
+            const newNote = {
+                content: '',
+                position: { x: 100, y: 100 }
+            };
+            notes.push(newNote);
+            saveNotes();
+            renderNotes();
+        }
+
+        // Delete a note
+        function deleteNote(index) {
+            notes.splice(index, 1);
+            saveNotes();
+            renderNotes();
+        }
+
+        // Edit a note
+        function editNote(index) {
+            const textarea = document.querySelector(`[data-id="${index}"] textarea`);
+            textarea.disabled = !textarea.disabled;
+            if (!textarea.disabled) {
+                textarea.focus();
+            }
+            notes[index].content = textarea.value;
+            saveNotes();
+        }
+
+        // Make the note draggable
+        function makeNoteDraggable(noteElement) {
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            noteElement.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('drag')) {
+                    isDragging = true;
+                    offsetX = e.clientX - noteElement.getBoundingClientRect().left;
+                    offsetY = e.clientY - noteElement.getBoundingClientRect().top;
+                    noteElement.style.zIndex = 1000;
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const left = e.clientX - offsetX;
+                    const top = e.clientY - offsetY;
+                    noteElement.style.left = left + 'px';
+                    noteElement.style.top = top + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    const noteId = noteElement.getAttribute('data-id');
+                    notes[noteId].position = {
+                        x: parseInt(noteElement.style.left),
+                        y: parseInt(noteElement.style.top)
+                    };
+                    saveNotes();
+                }
+            });
+        }
+
+        // Initialize the app
+        window.onload = () => {
+            renderNotes();
+            document.body.addEventListener('dblclick', addNote); // Add note on double-click
+        };
+
+    </script>
+
+</body>
+</html>
