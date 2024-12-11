@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sticky Notes App</title>
+    <title>Notes App</title>
     <style>
         * {
             margin: 0;
@@ -13,190 +13,163 @@
 
         body {
             font-family: Arial, sans-serif;
-            background-color: #e3e3e3;
-            overflow: hidden;
+            background-color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            flex-wrap: wrap;
         }
 
         .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            width: 90%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #noteInput {
             width: 100%;
+            height: 150px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            resize: none;
+        }
+
+        #addNoteBtn {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #addNoteBtn:hover {
+            background-color: #45a049;
+        }
+
+        .notes-list {
+            margin-top: 20px;
         }
 
         .note {
-            width: 200px;
-            height: 200px;
-            background-color: #f9eb7b;
-            margin: 10px;
-            padding: 15px;
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            position: relative;
-            cursor: pointer;
-            resize: both;
-            overflow: hidden;
-            font-size: 14px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .note textarea {
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            resize: none;
-            font-size: 16px;
-        }
-
-        .note .delete {
-            position: absolute;
-            top: 5px;
-            right: 5px;
+        .note button {
             background-color: red;
             color: white;
             border: none;
             border-radius: 50%;
-            padding: 5px;
+            padding: 5px 10px;
             cursor: pointer;
-            font-weight: bold;
         }
 
-        .note .edit {
-            position: absolute;
-            top: 5px;
-            left: 5px;
+        .note button:hover {
+            background-color: #d32f2f;
+        }
+
+        .note button.edit {
             background-color: orange;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            padding: 5px;
-            cursor: pointer;
-            font-weight: bold;
         }
 
-        .note .drag {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            cursor: move;
+        .note button.edit:hover {
+            background-color: #f57c00;
         }
-
     </style>
 </head>
 <body>
 
-    <div class="container" id="container">
-   
+    <div class="container">
+        <h1>Notes App</h1>
+        <textarea id="noteInput" placeholder="Write your note here..."></textarea>
+        <button id="addNoteBtn">Add Note</button>
+
+        <div id="notesList" class="notes-list">
+            <!-- Notes will be dynamically added here -->
+        </div>
     </div>
 
     <script>
-        // Load notes from localStorage
-        let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+        // Get elements
+        const noteInput = document.getElementById('noteInput');
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const notesList = document.getElementById('notesList');
 
-        // Render notes on page load
+        // Load notes from localStorage
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+
+        // Function to render notes
         function renderNotes() {
-            const container = document.getElementById('container');
-            container.innerHTML = ''; // Clear existing notes
+            notesList.innerHTML = ''; // Clear notes container
             notes.forEach((note, index) => {
                 const noteElement = document.createElement('div');
                 noteElement.classList.add('note');
-                noteElement.draggable = true;
-                noteElement.setAttribute('data-id', index);
-
                 noteElement.innerHTML = `
-                    <button class="delete" onclick="deleteNote(${index})">X</button>
-                    <button class="edit" onclick="editNote(${index})">E</button>
-                    <div class="drag">☰</div>
-                    <textarea>${note.content}</textarea>
+                    <span>${note}</span>
+                    <div>
+                        <button class="edit" onclick="editNote(${index})">Edit</button>
+                        <button onclick="deleteNote(${index})">Delete</button>
+                    </div>
                 `;
-                container.appendChild(noteElement);
-                makeNoteDraggable(noteElement);
+                notesList.appendChild(noteElement);
             });
         }
 
-        // Save notes to localStorage
-        function saveNotes() {
-            localStorage.setItem('stickyNotes', JSON.stringify(notes));
-        }
+        // Function to add a note
+        addNoteBtn.addEventListener('click', () => {
+            const noteText = noteInput.value.trim();
+            if (noteText !== '') {
+                notes.push(noteText);
+                noteInput.value = ''; // Clear input field
+                saveNotes();
+                renderNotes();
+            }
+        });
 
-        // Add a new note
-        function addNote() {
-            const newNote = {
-                content: '',
-                position: { x: 100, y: 100 }
-            };
-            notes.push(newNote);
-            saveNotes();
-            renderNotes();
-        }
-
-        // Delete a note
+        // Function to delete a note
         function deleteNote(index) {
             notes.splice(index, 1);
             saveNotes();
             renderNotes();
         }
 
-        // Edit a note
+        // Function to edit a note
         function editNote(index) {
-            const textarea = document.querySelector(`[data-id="${index}"] textarea`);
-            textarea.disabled = !textarea.disabled;
-            if (!textarea.disabled) {
-                textarea.focus();
+            const newNoteText = prompt('Edit your note:', notes[index]);
+            if (newNoteText !== null && newNoteText.trim() !== '') {
+                notes[index] = newNoteText.trim();
+                saveNotes();
+                renderNotes();
             }
-            notes[index].content = textarea.value;
-            saveNotes();
         }
 
-        // Make the note draggable
-        function makeNoteDraggable(noteElement) {
-            let isDragging = false;
-            let offsetX, offsetY;
-
-            noteElement.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('drag')) {
-                    isDragging = true;
-                    offsetX = e.clientX - noteElement.getBoundingClientRect().left;
-                    offsetY = e.clientY - noteElement.getBoundingClientRect().top;
-                    noteElement.style.zIndex = 1000;
-                }
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    const left = e.clientX - offsetX;
-                    const top = e.clientY - offsetY;
-                    noteElement.style.left = left + 'px';
-                    noteElement.style.top = top + 'px';
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    const noteId = noteElement.getAttribute('data-id');
-                    notes[noteId].position = {
-                        x: parseInt(noteElement.style.left),
-                        y: parseInt(noteElement.style.top)
-                    };
-                    saveNotes();
-                }
-            });
+        // Function to save notes to localStorage
+        function saveNotes() {
+            localStorage.setItem('notes', JSON.stringify(notes));
         }
 
-        // Initialize the app
-        window.onload = () => {
-            renderNotes();
-            document.body.addEventListener('dblclick', addNote); // Add note on double-click
-        };
-
+        // Initial render of notes
+        renderNotes();
     </script>
 
 </body>
